@@ -15,15 +15,21 @@ model customers {
   image_url String @db.VarChar(255)
 }
 
-model invoices {
-  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  customer_id String   @db.Uuid
-  amount      Int
-  status      String   @db.VarChar(255)
-  date        DateTime @db.Date
+model produk {
+  id_produk   Int         @id @default(autoincrement())
+  nama_produk String      @db.VarChar(255)
+  harga       Decimal     @db.Decimal(10, 2)
+  stok        Int
+  foto        String?     @db.VarChar(255)
+  deskripsi   String?
+  transaksi   transaksi[]
 }
 
-model revenue {
-  month   String @unique @db.VarChar(4)
-  revenue Int
+model transaksi {
+  id_transaksi Int      @id @default(autoincrement())
+  id_produk    Int?
+  nama_pembeli String   @db.VarChar(255)
+  tanggal      DateTime @db.Date
+  total_harga  Decimal  @db.Decimal(10, 2)
+  produk       produk?  @relation(fields: [id_produk], references: [id_produk], onDelete: NoAction, onUpdate: NoAction)
 }
