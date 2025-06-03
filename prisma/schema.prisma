@@ -31,6 +31,6 @@ model transaksi {
   nama_pembeli String   @db.VarChar(255)
   tanggal      DateTime @db.Date
   total_harga  Decimal  @db.Decimal(10, 2)
-  status      String   @db.VarChar(255)  
+  status       String   @db.VarChar(255)
   produk       produk?  @relation(fields: [id_produk], references: [id_produk], onDelete: NoAction, onUpdate: NoAction)
 }
