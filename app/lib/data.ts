@@ -6,6 +6,7 @@ import {
   InvoicesTable,
   LatestInvoiceRaw,
   Revenue,
+  transaksi,
 } from './definitions';
 import { formatCurrency } from './utils';
 
@@ -93,7 +94,7 @@ export async function fetchFilteredInvoices(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
-    const invoices = await sql<InvoicesTable[]>`
+    const invoices = await sql<transaksi[]>`
       SELECT
         invoices.id,
         invoices.amount,

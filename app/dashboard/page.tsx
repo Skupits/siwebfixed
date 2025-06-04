@@ -1,41 +1,38 @@
 import { Card } from '@/app/ui/dashboard/cards';
-import RevenueChart from '@/app/ui/dashboard/revenue-chart';
+import MostSoldChart from '@/app/ui/dashboard/revenue-chart';
 import LatestInvoices from '@/app/ui/dashboard/latest-invoices';
 import { lusitana } from '@/app/ui/fonts';
 import {
-  fetchRevenue,
-  fetchLatestInvoices,
-  fetchCardData,
-} from '@/app/lib/data';
- 
+  fetchAnalyticsData,
+  fetchMostSoldProducts,
+} from '@/app/lib/prisma';
+
 export default async function Page() {
-  const revenue = await fetchRevenue();
-  const latestInvoices = await fetchLatestInvoices();
-  const {
-    numberOfInvoices,
-    numberOfCustomers,
-    totalPaidInvoices,
-    totalPendingInvoices,
-  } = await fetchCardData();
- 
+  // Ambil data analitik
+  const analytics = await fetchAnalyticsData();
+  const mostsold = await fetchMostSoldProducts();
+
   return (
     <main>
       <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
         Dashboard
       </h1>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="Collected" value={totalPaidInvoices} type="collected" />
-        <Card title="Pending" value={totalPendingInvoices} type="pending" />
-        <Card title="Total Invoices" value={numberOfInvoices} type="invoices" />
+
+      {/* Menampilkan metrik utama */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Card title="Total Produk" value={analytics.totalProducts} type="products" />
+        <Card title="Total Revenue" value={analytics.totalRevenue} type="revenue" />
         <Card
-          title="Total Customers"
-          value={numberOfCustomers}
-          type="customers"
+          title="Produk Terlaris"
+          value={`${analytics.mostSoldProduct.name} (${analytics.mostSoldProduct.count})`}
+          type="best-seller"
         />
       </div>
+
+      {/* Grafik dan invoice */}
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
-        <RevenueChart revenue={revenue} />
-        <LatestInvoices latestInvoices={latestInvoices} />
+        <MostSoldChart data={mostsold} />
+        <LatestInvoices latestInvoices={[]} />
       </div>
     </main>
   );

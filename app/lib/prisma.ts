@@ -1,82 +1,177 @@
 import { PrismaClient } from "@/generated/prisma";
-import { LatestInvoice } from "./definitions";
 import { formatCurrency } from "./utils";
 
 const prisma = new PrismaClient();
 
-export async function fetchRevenuePrisma() {
+// Jika belum ada, definisikan tipe di sini atau di file terpisah (misal types.ts)
+interface Customer {
+  id_customer: string;
+  name: string;
+}
+
+interface Product {
+  id_produk: string;
+  nama_produk: string;
+}
+
+// Fungsi utama untuk analitik ringkas
+export async function fetchAnalyticsData() {
   try {
-    const data = await prisma.transaksi.findMany();
-    return data;
+    const totalProductsPromise = prisma.produk.count();
+
+    const totalRevenuePromise = prisma.transaksi.aggregate({
+      where: { status: "paid" },
+      _sum: {
+        total_harga: true,
+      },
+    });
+
+    const mostSoldProductPromise = prisma.transaksi.groupBy({
+      by: ["id_produk"],
+      _count: {
+        id_produk: true,
+      },
+      orderBy: {
+        _count: {
+          id_produk: "desc",
+        },
+      },
+      take: 1,
+    });
+
+    const [totalProducts, totalRevenue, mostSoldGroup] = await Promise.all([
+      totalProductsPromise,
+      totalRevenuePromise,
+      mostSoldProductPromise,
+    ]);
+
+    let mostSoldProductName = "-";
+    let mostSoldCount = 0;
+
+    if (mostSoldGroup.length > 0) {
+      const mostSold = mostSoldGroup[0];
+
+      const product = await prisma.produk.findUnique({
+        where: {
+          id_produk: mostSold.id_produk ?? undefined,
+        },
+      });
+
+      mostSoldProductName = product?.nama_produk || "-";
+      mostSoldCount = mostSold._count.id_produk;
+    }
+
+    return {
+      totalProducts,
+      totalRevenue: formatCurrency(Number(totalRevenue._sum.total_harga ?? 0)),
+      mostSoldProduct: {
+        name: mostSoldProductName,
+        count: mostSoldCount,
+      },
+    };
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch revenue data.");
+    throw new Error("Failed to fetch analytics data.");
   }
 }
 
-// export async function fetchLatestInvoicesPrisma() {
-//   try {
-//     const data = await prisma.invoices.findMany({
-//       take: 5,
-//       orderBy: {
-//         date: "desc",
-//       },
-//       include: {
-//         customer: {
-//           select: {
-//             name: true,
-//             image_url: true,
-//             email: true,
-//           },
-//         },
-//       },
-//     });
+// Ambil 5 produk terlaris
+export async function fetchMostSoldProducts() {
+  try {
+    const data = await prisma.transaksi.groupBy({
+      by: ["id_produk"],
+      _count: {
+        id_produk: true,
+      },
+      orderBy: {
+        _count: {
+          id_produk: "desc",
+        },
+      },
+      take: 5,
+    });
 
-//     const latestInvoices = data.map((invoice) => ({
-//       amount: formatCurrency(invoice.amount),
-//       name: invoice.customer.name,
-//       image_url: invoice.customer.image_url,
-//       email: invoice.customer.email,
-//       id: invoice.id,
-//     })) as unknown as LatestInvoice[];
+    const result = await Promise.all(
+      data.map(async (item) => {
+        const produk = await prisma.produk.findUnique({
+          where: {
+            id_produk: item.id_produk ?? undefined,
+          },
+        });
+        return {
+          name: produk?.nama_produk || "Produk Tidak Diketahui",
+          count: item._count.id_produk,
+        };
+      })
+    );
 
-//     return latestInvoices;
-//   } catch (error) {
-//     console.error("Database Error:", error);
-//     throw new Error("Failed to fetch the latest invoices.");
-//   }
-// }
+    return result;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch most sold products.");
+  }
+}
 
-// export async function fetchCardDataPrisma() {
-//   try {
-//     const invoiceCountPromise = prisma.invoices.count();
-//     const customerCountPromise = prisma.customers.count();
-//     const invoiceStatusPromise = prisma.invoices.groupBy({
-//       by: ["status"],
-//       _sum: {
-//         amount: true,
-//       },
-//     });
+// Fetch data transaksi dengan relasi produk dan customer
+export async function fetchTransactionTable(query: string, currentPage: number) {
+  const ITEMS_PER_PAGE = 10;
+  try {
+    const data = await prisma.transaksi.findMany({
+      where: {
+        OR: [
+          { produk: { nama_produk: { contains: query, mode: "insensitive" } } },
+          { customers: { name: { contains: query, mode: "insensitive" } } }, 
+          // Asumsi relasi ke model customers benar
+        ],
+      },
+      include: {
+        produk: {
+          select: {
+            nama_produk: true,
+            foto: true,
+          },
+        },
+        customers: {
+          select: {
+            name: true,
+            image_url: true,
+          },
+        },
+      },
+      orderBy: {
+        id_transaksi: "desc",
+      },
+      skip: (currentPage - 1) * ITEMS_PER_PAGE,
+      take: ITEMS_PER_PAGE,
+    });
 
-//     const data = await Promise.all([
-//       invoiceCountPromise,
-//       customerCountPromise,
-//       invoiceStatusPromise,
-//     ]);
+    return data.map((trx) => ({
+      id_transaksi: trx.id_transaksi,
+      nama_produk: trx.produk?.nama_produk ?? "Produk tidak ditemukan",
+      nama_pembeli: trx.customers?.name ?? "Pembeli tidak ditemukan",
+      total_harga: trx.total_harga,
+      tanggal: trx.tanggal,
+      status: trx.status,
+      image_url: trx.customers?.image_url ?? null,
+    }));
+  } catch (error) {
+    console.error("Gagal ambil data transaksi:", error);
+    throw new Error("Gagal mengambil data transaksi");
+  }
+}
 
-//     const paid =
-//       data[2].find((status) => status.status === "paid")?._sum.amount || 0;
-//     const pending =
-//       data[2].find((status) => status.status === "pending")?._sum.amount || 0;
+export async function fetchCustomers(): Promise<Customer[]> {
+  const customers = await prisma.customers.findMany(); // Pastikan model ini sesuai Prisma schema (mungkin 'customer' saja)
+  return customers.map((cust) => ({
+    id_customer: cust.id.toString(),
+    name: cust.name,
+  }));
+}
 
-//     return {
-//       numberOfCustomers: data[1],
-//       numberOfInvoices: data[0],
-//       totalPaidInvoices: formatCurrency(paid),
-//       totalPendingInvoices: formatCurrency(pending),
-//     };
-//   } catch (error) {
-//     console.error("Database Error:", error);
-//     throw new Error("Failed to fetch card data.");
-//   }
-// }
+export async function fetchProducts(): Promise<Product[]> {
+  const products = await prisma.produk.findMany(); // Ganti jadi 'produk' kalau itu model di schema
+  return products.map((prod) => ({
+    id_produk: prod.id_produk.toString(),
+    nama_produk: prod.nama_produk,
+  }));
+}

@@ -13,6 +13,7 @@ model customers {
   name      String @db.VarChar(255)
   email     String @db.VarChar(255)
   image_url String @db.VarChar(255)
+   transaksi   transaksi[]
 }
 
 model produk {
@@ -28,9 +29,12 @@ model produk {
 model transaksi {
   id_transaksi Int      @id @default(autoincrement())
   id_produk    Int?
-  nama_pembeli String   @db.VarChar(255)
+  id_customers String?   @db.Uuid      // <-- koreksi nama kolom ini
   tanggal      DateTime @db.Date
   total_harga  Decimal  @db.Decimal(10, 2)
   status       String   @db.VarChar(255)
   produk       produk?  @relation(fields: [id_produk], references: [id_produk], onDelete: NoAction, onUpdate: NoAction)
+  customers    customers? @relation(fields: [id_customers], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
+
+  

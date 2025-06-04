@@ -1,0 +1,25 @@
+import CreateTransactionForm from '@/app/ui/invoices/create-form';
+import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
+import { fetchCustomers, fetchProducts } from '@/app/lib/prisma';
+
+export default async function Page() {
+  const [customers, products] = await Promise.all([fetchCustomers(), fetchProducts()]);
+
+  return (
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          { label: 'Transactions', href: '/dashboard/transactions' },
+          {
+            label: 'Create Transaction',
+            href: '/dashboard/transactions/create',
+            active: true,
+          },
+        ]}
+      />
+      <div className="mt-4">
+        <CreateTransactionForm customers={customers} products={products} />
+      </div>
+    </main>
+  );
+}

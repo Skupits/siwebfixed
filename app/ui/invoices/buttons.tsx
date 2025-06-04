@@ -16,13 +16,14 @@ export function CreateInvoice() {
 export function UpdateInvoice({ id }: { id: string }) {
   return (
     <Link
-      href="/dashboard/invoices"
+      href={`/dashboard/invoices/edit/${id}`} // Ubah ke halaman edit
       className="rounded-md border p-2 hover:bg-gray-100"
     >
       <PencilIcon className="w-5" />
     </Link>
   );
 }
+
 
 export function DeleteInvoice({ id }: { id: string }) {
   return (

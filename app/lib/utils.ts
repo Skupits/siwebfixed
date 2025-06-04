@@ -1,14 +1,14 @@
 import { Revenue } from './definitions';
 
 export const formatCurrency = (amount: number) => {
-  return (amount / 100).toLocaleString('en-US', {
+  return (amount / 100).toLocaleString('id-ID', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'IDR',
   });
 };
 
 export const formatDateToLocal = (
-  dateStr: string,
+  dateStr: string | Date,
   locale: string = 'en-US',
 ) => {
   const date = new Date(dateStr);
@@ -20,6 +20,7 @@ export const formatDateToLocal = (
   const formatter = new Intl.DateTimeFormat(locale, options);
   return formatter.format(date);
 };
+
 
 export const generateYAxis = (revenue: Revenue[]) => {
   // Calculate what labels we need to display on the y-axis
