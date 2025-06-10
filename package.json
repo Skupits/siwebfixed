@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@prisma/client": "^6.8.2",
+    "@prisma/client": "^6.9.0",
     "@tailwindcss/forms": "^0.5.10",
     "autoprefixer": "10.4.20",
     "bcryptjs": "^3.0.2",
@@ -32,7 +32,7 @@
     "@types/node": "22.10.7",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
-    "prisma": "^6.8.2"
+    "prisma": "^6.9.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

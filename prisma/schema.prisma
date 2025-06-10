@@ -9,32 +9,30 @@ datasource db {
 }
 
 model customers {
-  id        String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name      String @db.VarChar(255)
-  email     String @db.VarChar(255)
-  image_url String @db.VarChar(255)
-   transaksi   transaksi[]
+  id        String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String      @db.VarChar(255)
+  email     String      @db.VarChar(255)
+  image_url String      @db.VarChar(255)
+  transaksi transaksi[]
 }
 
 model produk {
-  id_produk   Int         @id @default(autoincrement())
   nama_produk String      @db.VarChar(255)
   harga       Decimal     @db.Decimal(10, 2)
   stok        Int
   foto        String?     @db.VarChar(255)
   deskripsi   String?
+  id_produk   Int         @id @default(autoincrement())
   transaksi   transaksi[]
 }
 
 model transaksi {
-  id_transaksi Int      @id @default(autoincrement())
+  id_transaksi Int        @id @default(autoincrement())
   id_produk    Int?
-  id_customers String?   @db.Uuid      // <-- koreksi nama kolom ini
-  tanggal      DateTime @db.Date
-  total_harga  Decimal  @db.Decimal(10, 2)
-  status       String   @db.VarChar(255)
-  produk       produk?  @relation(fields: [id_produk], references: [id_produk], onDelete: NoAction, onUpdate: NoAction)
+  tanggal      DateTime   @db.Date
+  total_harga  Decimal    @db.Decimal(10, 2)
+  status       String     @db.VarChar(255)
+  id_customers String?    @db.Uuid
   customers    customers? @relation(fields: [id_customers], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  produk       produk?    @relation(fields: [id_produk], references: [id_produk], onDelete: NoAction, onUpdate: NoAction)
 }
-
-  

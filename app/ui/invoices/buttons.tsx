@@ -1,3 +1,5 @@
+'use client';
+
 import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
@@ -16,7 +18,7 @@ export function CreateInvoice() {
 export function UpdateInvoice({ id }: { id: string }) {
   return (
     <Link
-      href={`/dashboard/invoices/edit/${id}`} // Ubah ke halaman edit
+      href={`/dashboard/invoices/${id}/edit`}
       className="rounded-md border p-2 hover:bg-gray-100"
     >
       <PencilIcon className="w-5" />
@@ -24,14 +26,33 @@ export function UpdateInvoice({ id }: { id: string }) {
   );
 }
 
-
 export function DeleteInvoice({ id }: { id: string }) {
+  const deleteInvoiceWithId = async () => {
+    if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+      try {
+        const response = await fetch(`/api/invoices/${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert('Gagal menghapus transaksi');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menghapus transaksi');
+      }
+    }
+  };
+
   return (
-    <>
-      <button type="submit" className="rounded-md border p-2 hover:bg-gray-100">
-        <span className="sr-only">Delete</span>
-        <TrashIcon className="w-5" />
-      </button>
-    </>
+    <button 
+      onClick={deleteInvoiceWithId}
+      className="rounded-md border p-2 hover:bg-gray-100"
+    >
+      <span className="sr-only">Delete</span>
+      <TrashIcon className="w-5" />
+    </button>
   );
 }

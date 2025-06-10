@@ -14,6 +14,16 @@ interface Product {
   nama_produk: string;
 }
 
+interface Transaction {
+  id_transaksi: string;
+  id_customers: string;
+  id_produk: string;
+  quantity: number;
+  total_harga: number;
+  tanggal: Date;
+  status: 'pending' | 'paid';
+}
+
 // Fungsi utama untuk analitik ringkas
 export async function fetchAnalyticsData() {
   try {
@@ -175,8 +185,38 @@ export async function fetchProducts(): Promise<Product[]> {
     nama_produk: prod.nama_produk,
   }));
 }
+
+export async function fetchTransactionById(id: string): Promise<Transaction | null> {
+  try {
+    const transaction = await prisma.transaksi.findUnique({
+      where: {
+        id_transaksi: parseInt(id)
+      }
+    });
+    
+    if (!transaction) return null;
+    
+    // Gunakan nullish coalescing untuk menghindari error null
+    const id_customers = transaction.id_customers ?? '';
+    const id_produk = transaction.id_produk ?? 0;
+    
+    return {
+      id_transaksi: transaction.id_transaksi.toString(),
+      id_customers: id_customers.toString(),
+      id_produk: id_produk.toString(),
+      quantity: 1, // Default quantity karena tidak ada di schema
+      total_harga: Number(transaction.total_harga),
+      tanggal: transaction.tanggal,
+      status: transaction.status as 'pending' | 'paid'
+    };
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch transaction.");
+  }
+}
+
 export async function fetchTransactionsPages(query: string): Promise<number> {
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 5;
   try {
     const totalCount = await prisma.transaksi.count({
       where: {

@@ -16,7 +16,7 @@ const links = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
   { name: 'About Us', href: '/user/AboutUs', icon: DocumentDuplicateIcon },
   { name: 'Our Teams', href: '/user/OurTeams', icon: UserGroupIcon },
-  { name: 'Contact', href : '/user/Contact', icon: ChatBubbleLeftIcon},
+  { name: 'Contact', href : '/user/contact', icon: ChatBubbleLeftIcon},
   { name: 'Shop', href : '/user/shop', icon: ShoppingCartIcon},
 ];
 

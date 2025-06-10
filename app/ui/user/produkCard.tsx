@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Heart, Star } from "lucide-react";
 import { formatCurrency } from "@/app/lib/utils";
 import Link from 'next/link';
+import { useState } from "react";
 
 interface ProductCardProps {
   title: string;
@@ -12,6 +13,7 @@ interface ProductCardProps {
   reviewCount: number;
   priceOriginal: number;
   priceDiscount: number;
+  productId?: number;
 }
 
 export default function ProductCard({
@@ -21,11 +23,20 @@ export default function ProductCard({
   reviewCount,
   priceOriginal,
   priceDiscount,
+  productId,
 }: ProductCardProps) {
+  const [imgError, setImgError] = useState(false);
+  
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden flex flex-col">
       <div className="relative w-full aspect-[4/3] bg-gray-50">
-        <Image src={image} alt={title} fill className="object-contain p-4" />
+        <Image 
+          src={imgError ? "/Pulpen.png" : image} 
+          alt={title} 
+          fill 
+          className="object-contain p-4"
+          onError={() => setImgError(true)}
+        />
         <button className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-red-100 transition">
           <Heart className="h-5 w-5 text-gray-600 hover:text-red-500" />
         </button>
@@ -50,10 +61,10 @@ export default function ProductCard({
             {formatCurrency(priceDiscount)}
           </p>
         </div>
-        <Link href="/user/detail">
-        <button className="mt-4 w-full bg-black text-white text-sm py-2 rounded-xl hover:bg-gray-800 transition">
-          Buy Now
-        </button>
+        <Link href={productId ? `/user/detail?id=${productId}` : "/user/detail"}>
+          <button className="mt-4 w-full bg-black text-white text-sm py-2 rounded-xl hover:bg-gray-800 transition">
+            Buy Now
+          </button>
         </Link>
       </div>
     </div>
