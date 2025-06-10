@@ -176,7 +176,7 @@ export async function fetchProducts(): Promise<Product[]> {
   }));
 }
 export async function fetchTransactionsPages(query: string): Promise<number> {
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 5;
   try {
     const totalCount = await prisma.transaksi.count({
       where: {
@@ -192,3 +192,4 @@ export async function fetchTransactionsPages(query: string): Promise<number> {
     return 1;
   }
 }
+

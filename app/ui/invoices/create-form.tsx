@@ -2,6 +2,12 @@
 
 import { useState, useTransition } from 'react';
 import { createTransaction } from '@/app/lib/actions';
+import {
+  CheckIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/outline';
 
 interface Customer {
   id_customer: string;
@@ -24,6 +30,7 @@ export default function CreateTransactionForm({
     customerId: '',
     productId: '',
     quantity: 1,
+    status: 'pending', // ✅ default status
   });
 
   const [isPending, startTransition] = useTransition();
@@ -114,6 +121,22 @@ export default function CreateTransactionForm({
           required
           className="mt-1 w-full border rounded p-2"
         />
+      </div>
+
+      <div>
+        <label htmlFor="status" className="block font-medium">
+          Status Transaksi
+        </label>
+        <select
+          name="status"
+          onChange={handleChange}
+          value={formData.status}
+          required
+          className="mt-1 w-full border rounded p-2"
+        >
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+        </select>
       </div>
 
       <button
