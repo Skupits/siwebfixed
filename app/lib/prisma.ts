@@ -175,3 +175,20 @@ export async function fetchProducts(): Promise<Product[]> {
     nama_produk: prod.nama_produk,
   }));
 }
+export async function fetchTransactionsPages(query: string): Promise<number> {
+  const ITEMS_PER_PAGE = 10;
+  try {
+    const totalCount = await prisma.transaksi.count({
+      where: {
+        OR: [
+          { produk: { nama_produk: { contains: query, mode: 'insensitive' } } },
+          { customers: { name: { contains: query, mode: 'insensitive' } } },
+        ],
+      },
+    });
+    return Math.ceil(totalCount / ITEMS_PER_PAGE);
+  } catch (error) {
+    console.error("Gagal menghitung halaman transaksi:", error);
+    return 1;
+  }
+}

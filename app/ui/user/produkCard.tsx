@@ -50,7 +50,7 @@ export default function ProductCard({
             {formatCurrency(priceDiscount)}
           </p>
         </div>
-        <Link href="/dashboard/detail">
+        <Link href="/user/detail">
         <button className="mt-4 w-full bg-black text-white text-sm py-2 rounded-xl hover:bg-gray-800 transition">
           Buy Now
         </button>
