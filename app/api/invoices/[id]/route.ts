@@ -1,13 +1,17 @@
 import { deleteTransaction } from '@/app/lib/actions';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest): Promise<Response> {
   try {
-    const id = params.id;
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop(); // Ambil ID dari URL
+
+    if (!id) {
+      return NextResponse.json({ message: 'ID tidak ditemukan di URL' }, { status: 400 });
+    }
+
     await deleteTransaction(id);
+
     return NextResponse.json({ message: 'Transaksi berhasil dihapus' }, { status: 200 });
   } catch (error) {
     console.error('Error deleting transaction:', error);

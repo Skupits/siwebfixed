@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import { fetchCustomers, fetchProducts, fetchTransactionById } from '@/app/lib/prisma';
 import EditTransactionForm from '@/app/ui/invoices/edit-form';
@@ -45,3 +47,8 @@ export default async function Page({ params }: { params: { id: string } }) {
     return <div className="p-4">Error: Tidak dapat memuat data transaksi.</div>;
   }
 }
+
+export async function generateStaticParams() {
+  return [];
+}
+

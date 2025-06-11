@@ -1,17 +1,18 @@
-// app/api/products/[id]/route.ts
 import { deleteProduct, fetchProductById } from '@/app/lib/product-actions';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Tambahkan ini jika route dinamis (agar tidak error di Vercel)
 export const dynamic = 'force-dynamic';
 
-export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const id = parseInt(context.params.id);
-
+export async function DELETE(request: NextRequest) {
   try {
+    const url = new URL(request.url);
+    const idParam = url.pathname.split('/').pop();
+    const id = idParam ? parseInt(idParam) : NaN;
+
+    if (isNaN(id)) {
+      return NextResponse.json({ message: 'ID tidak valid' }, { status: 400 });
+    }
+
     await deleteProduct(id);
     return NextResponse.json({ message: 'Produk berhasil dihapus' }, { status: 200 });
   } catch (error) {
@@ -23,13 +24,16 @@ export async function DELETE(
   }
 }
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const id = parseInt(context.params.id);
-
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url);
+    const idParam = url.pathname.split('/').pop();
+    const id = idParam ? parseInt(idParam) : NaN;
+
+    if (isNaN(id)) {
+      return NextResponse.json({ message: 'ID tidak valid' }, { status: 400 });
+    }
+
     const product = await fetchProductById(id);
 
     if (!product) {
