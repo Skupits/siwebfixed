@@ -10,13 +10,13 @@ const FormSchema = z.object({
   customerId: z.string(),
   productId: z.string(),
   quantity: z.coerce.number(),
-  status: z.enum(['pending', 'paid']),
+  status: z.enum(['pending', 'paid']), // ✅ tambahkan ini
 });
 
 // CREATE
 export async function createTransaction(formData: FormData) {
   const { customerId, productId, quantity, status } = FormSchema.parse({
-    customerId: formData.get('customerId'),
+    customerId: formData.get('customerId'), // ✅ sudah benar
     productId: formData.get('productId'),
     quantity: formData.get('quantity'),
     status: formData.get('status'),
@@ -30,6 +30,7 @@ export async function createTransaction(formData: FormData) {
 
   const totalHarga = parseFloat(product.harga) * quantity;
   const tanggal = new Date().toISOString().split('T')[0];
+  
 
   await sql`
     INSERT INTO transaksi (id_customers, id_produk, tanggal, total_harga, status)

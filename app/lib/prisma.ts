@@ -217,6 +217,7 @@ export async function fetchTransactionById(id: string): Promise<Transaction | nu
 
 export async function fetchTransactionsPages(query: string): Promise<number> {
   const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 5;
   try {
     const totalCount = await prisma.transaksi.count({
       where: {
