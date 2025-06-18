@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/generated/prisma";
 import { formatCurrency } from "./utils";
+import { revalidatePath } from 'next/cache';
 
 const prisma = new PrismaClient();
 
@@ -36,39 +37,53 @@ export async function fetchAnalyticsData() {
       },
     });
 
-    const mostSoldProductPromise = prisma.transaksi.groupBy({
-      by: ["id_produk"],
-      _count: {
-        id_produk: true,
-      },
-      orderBy: {
-        _count: {
-          id_produk: "desc",
-        },
-      },
-      take: 1,
-    });
+    // Fetch all transactions
+    const transactionsPromise = prisma.transaksi.findMany();
 
-    const [totalProducts, totalRevenue, mostSoldGroup] = await Promise.all([
+    const [totalProducts, totalRevenue, transactions] = await Promise.all([
       totalProductsPromise,
       totalRevenuePromise,
-      mostSoldProductPromise,
+      transactionsPromise,
     ]);
 
-    let mostSoldProductName = "-";
+    // Calculate total quantity sold for each product
+    // Assuming 1 transaction = 1 quantity (since quantity field doesn't exist in schema)
+    const productQuantities: Record<number, number> = {};
+    
+    transactions.forEach(transaction => {
+      if (transaction.id_produk) {
+        const productId = transaction.id_produk;
+        
+        if (!productQuantities[productId]) {
+          productQuantities[productId] = 0;
+        }
+        
+        // Count each transaction as 1 item
+        productQuantities[productId] += 1;
+      }
+    });
+    
+    // Find the most sold product by quantity
+    let mostSoldProductId = 0;
     let mostSoldCount = 0;
-
-    if (mostSoldGroup.length > 0) {
-      const mostSold = mostSoldGroup[0];
-
+    
+    Object.entries(productQuantities).forEach(([id, count]) => {
+      if (count > mostSoldCount) {
+        mostSoldProductId = parseInt(id);
+        mostSoldCount = count;
+      }
+    });
+    
+    let mostSoldProductName = "-";
+    
+    if (mostSoldProductId > 0) {
       const product = await prisma.produk.findUnique({
         where: {
-          id_produk: mostSold.id_produk ?? undefined,
+          id_produk: mostSoldProductId,
         },
       });
-
+      
       mostSoldProductName = product?.nama_produk || "-";
-      mostSoldCount = mostSold._count.id_produk;
     }
 
     return {
@@ -85,9 +100,10 @@ export async function fetchAnalyticsData() {
   }
 }
 
-// Ambil 5 produk terlaris
+// Ambil 5 produk terlaris berdasarkan jumlah transaksi
 export async function fetchMostSoldProducts() {
   try {
+    // Use groupBy to count transactions per product
     const data = await prisma.transaksi.groupBy({
       by: ["id_produk"],
       _count: {
@@ -100,7 +116,8 @@ export async function fetchMostSoldProducts() {
       },
       take: 5,
     });
-
+    
+    // Fetch product details
     const result = await Promise.all(
       data.map(async (item) => {
         const produk = await prisma.produk.findUnique({
@@ -110,7 +127,7 @@ export async function fetchMostSoldProducts() {
         });
         return {
           name: produk?.nama_produk || "Produk Tidak Diketahui",
-          count: item._count.id_produk,
+          total: item._count.id_produk, // Use total instead of count for consistency
         };
       })
     );
@@ -178,12 +195,74 @@ export async function fetchCustomers(): Promise<Customer[]> {
   }));
 }
 
-export async function fetchProducts(): Promise<Product[]> {
-  const products = await prisma.produk.findMany(); // Ganti jadi 'produk' kalau itu model di schema
-  return products.map((prod) => ({
-    id_produk: prod.id_produk.toString(),
-    nama_produk: prod.nama_produk,
-  }));
+// Updated to return full product details
+export async function fetchProducts(page = 1, limit = 8) {
+  try {
+    const skip = (page - 1) * limit;
+    
+    const [products, totalCount] = await Promise.all([
+      prisma.produk.findMany({
+        orderBy: {
+          id_produk: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.produk.count(),
+    ]);
+    
+    // Format products with proper types
+    const formattedProducts = products.map(product => ({
+      id_produk: product.id_produk.toString(),
+      nama_produk: product.nama_produk,
+      harga: Number(product.harga),
+      stok: product.stok,
+      foto: product.foto || null,
+      deskripsi: product.deskripsi || null
+    }));
+    
+    return {
+      products: formattedProducts,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      totalCount
+    };
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return {
+      products: [],
+      totalPages: 1,
+      currentPage: page,
+      totalCount: 0
+    };
+  }
+}
+
+// Function to fetch a single product by ID
+export async function fetchProductById(id: string | number) {
+  try {
+    const productId = typeof id === 'string' ? parseInt(id) : id;
+    
+    const product = await prisma.produk.findUnique({
+      where: {
+        id_produk: productId,
+      },
+    });
+    
+    if (!product) return null;
+    
+    return {
+      id_produk: product.id_produk.toString(),
+      nama_produk: product.nama_produk,
+      harga: Number(product.harga),
+      stok: product.stok,
+      foto: product.foto || null,
+      deskripsi: product.deskripsi || null
+    };
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return null;
+  }
 }
 
 export async function fetchTransactionById(id: string): Promise<Transaction | null> {
@@ -230,5 +309,41 @@ export async function fetchTransactionsPages(query: string): Promise<number> {
   } catch (error) {
     console.error("Gagal menghitung halaman transaksi:", error);
     return 1;
+  }
+}
+
+// Fungsi untuk menghapus produk
+export async function deleteProduct(id: number) {
+  try {
+    // Check if product has related transactions
+    const relatedTransactions = await prisma.transaksi.findMany({
+      where: {
+        id_produk: id
+      }
+    });
+
+    if (relatedTransactions.length > 0) {
+      return { 
+        success: false, 
+        error: 'Tidak dapat menghapus produk karena masih terkait dengan transaksi'
+      };
+    }
+
+    // If no related transactions, proceed with deletion
+    await prisma.produk.delete({
+      where: {
+        id_produk: id,
+      },
+    });
+
+    revalidatePath('/dashboard/products');
+    revalidatePath('/user/shop');
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error) 
+    };
   }
 }

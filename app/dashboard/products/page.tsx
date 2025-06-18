@@ -1,28 +1,43 @@
 // app/dashboard/products/page.tsx
-import { fetchProducts } from '@/app/lib/product-actions';
-import { deleteProduct } from './actions';
+import { fetchProducts, deleteProduct } from '@/app/lib/prisma';
 import { formatCurrency } from '@/app/lib/utils';
 import { lusitana } from '@/app/ui/fonts';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import ProductImage from '@/app/ui/products/product-image';
 import ProductSearch from '@/app/ui/products/search';
+import ProductsTableSkeleton from '@/app/ui/dashboard/products-skeletons';
+import Pagination from '@/app/ui/products/pagination';
+import { Suspense } from 'react';
+
+// Helper function to get proper image URL
+function getImageUrl(foto: string | null): string {
+  if (!foto) return '/Pulpen.png';
+  
+  if (foto.startsWith('/') || foto.startsWith('http')) {
+    return foto;
+  }
+  
+  // If it's just a filename, add a leading slash
+  return `/uploads/${foto}`;
+}
+
+// Set items per page to 5
+const ITEMS_PER_PAGE = 5;
 
 export default async function ProductsPage({
-  searchParams = {},
+  searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] };
+  searchParams?: Promise<{
+    query?: string;
+    page?: string;
+  }>;
 }) {
-  const query = typeof searchParams.query === 'string' ? searchParams.query : '';
-  const products = await fetchProducts();
-
-  const filteredProducts = query
-    ? products.filter(product =>
-        product.nama_produk.toLowerCase().includes(query.toLowerCase()) ||
-        (product.deskripsi && product.deskripsi.toLowerCase().includes(query.toLowerCase()))
-      )
-    : products;
-
+  // Await the searchParams before accessing its properties
+  const params = await searchParams;
+  const query = params?.query || '';
+  const currentPage = Number(params?.page) || 1;
+  
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
@@ -42,6 +57,25 @@ export default async function ProductsPage({
       </div>
 
       {/* Tabel produk */}
+      <Suspense fallback={<ProductsTableSkeleton />}>
+        <ProductsTable query={query} currentPage={currentPage} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ProductsTable({ query, currentPage }: { query: string, currentPage: number }) {
+  const { products, totalPages } = await fetchProducts(currentPage, ITEMS_PER_PAGE);
+
+  const filteredProducts = query
+    ? products.filter(product =>
+        product.nama_produk.toLowerCase().includes(query.toLowerCase()) ||
+        (product.deskripsi && product.deskripsi.toLowerCase().includes(query.toLowerCase()))
+      )
+    : products;
+
+  return (
+    <>
       <div className="mt-6 flow-root">
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full align-middle">
@@ -57,51 +91,40 @@ export default async function ProductsPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {filteredProducts.length > 0 ? (
+                  {filteredProducts && filteredProducts.length > 0 ? (
                     filteredProducts.map((product) => {
-                      const imageSrc = product.foto
-                        ? product.foto.startsWith('product_')
-                          ? `/uploads/${product.foto}`
-                          : `/${product.foto}`
-                        : '/Pulpen.png';
-
-                      return (
-                        <tr key={product.id_produk} className="hover:bg-gray-50">
-                          <td className="whitespace-nowrap px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 relative">
-                                <ProductImage src={imageSrc} alt={product.nama_produk} />
-                              </div>
-                              <p>{product.nama_produk}</p>
+                      const id_produk = parseInt(product.id_produk);
+                      return (<tr key={product.id_produk} className="hover:bg-gray-50">
+                        <td className="whitespace-nowrap px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 relative">
+                              <ProductImage src={getImageUrl(product.foto)} alt={product.nama_produk} />
                             </div>
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-4">
-                            {formatCurrency(Number(product.harga))}
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-4">{product.stok}</td>
-                          <td className="px-4 py-4 max-w-xs">
-                            <p className="truncate">{product.deskripsi || '-'}</p>
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <Link
-                                href={`/dashboard/products/${product.id_produk}/edit`}
-                                className="rounded-md border p-2 hover:bg-gray-100"
-                              >
-                                <PencilIcon className="w-5" />
-                              </Link>
-                              <form action={async () => {
-                                'use server';
-                                await deleteProduct(product.id_produk);
-                              }}>
-                                <button className="rounded-md border p-2 hover:bg-gray-100">
-                                  <TrashIcon className="w-5" />
-                                </button>
-                              </form>
-                            </div>
-                          </td>
-                        </tr>
-                      );
+                            <p>{product.nama_produk}</p>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4">{formatCurrency(product.harga)}</td>
+                        <td className="whitespace-nowrap px-4 py-4">{product.stok}</td>
+                        <td className="px-4 py-4 max-w-xs"><p className="truncate">{product.deskripsi || '-'}</p></td>
+                        <td className="whitespace-nowrap px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <Link
+                              href={`/dashboard/products/${id_produk}/edit`}
+                              className="rounded-md border p-2 hover:bg-gray-100"
+                            >
+                              <PencilIcon className="w-5" />
+                            </Link>
+                            <form action={async () => {
+                              'use server';
+                              await deleteProduct(id_produk);
+                            }}>
+                              <button className="rounded-md border p-2 hover:bg-gray-100">
+                                <TrashIcon className="w-5" />
+                              </button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>);
                     })
                   ) : (
                     <tr>
@@ -116,6 +139,11 @@ export default async function ProductsPage({
           </div>
         </div>
       </div>
-    </div>
+      
+      {/* Pagination */}
+      <div className="mt-5 flex w-full justify-center">
+        <Pagination totalPages={totalPages} currentPage={currentPage} />
+      </div>
+    </>
   );
 }

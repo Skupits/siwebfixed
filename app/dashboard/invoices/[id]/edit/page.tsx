@@ -9,11 +9,9 @@ export default async function Page({ params }: { params: { id: string } }) {
   const id = params.id;
 
   try {
-    const [customers, products, transaction] = await Promise.all([
-      fetchCustomers(),
-      fetchProducts(),
-      fetchTransactionById(id),
-    ]);
+    const customers = await fetchCustomers();
+    const { products } = await fetchProducts();
+    const transaction = await fetchTransactionById(id);
 
     if (!transaction) {
       notFound();
@@ -51,4 +49,3 @@ export default async function Page({ params }: { params: { id: string } }) {
 export async function generateStaticParams() {
   return [];
 }
-

@@ -5,9 +5,9 @@ import { lusitana } from '@/app/ui/fonts';
 import { LatestInvoice } from '@/app/lib/definitions';
 
 export default async function LatestInvoices({
-  latestInvoices,
+  latestInvoices = [],
 }: {
-  latestInvoices: LatestInvoice[];
+  latestInvoices?: LatestInvoice[];
 }) {
   // Dummy data untuk contoh
   const dummyInvoices = [
@@ -49,6 +49,9 @@ export default async function LatestInvoices({
     }
   ];
 
+  // Use latestInvoices if provided, otherwise use dummy data
+  const invoices = latestInvoices.length > 0 ? latestInvoices : dummyInvoices;
+
   return (
     <div className="col-span-8 lg:col-span-3 h-96 rounded-xl bg-white p-6 shadow-md border border-gray-100">
       <div className="flex justify-between items-center mb-4">
@@ -60,7 +63,7 @@ export default async function LatestInvoices({
       </div>
 
       <div className="overflow-y-auto h-[calc(100%-4rem)] pr-2 scrollbar-thin">
-        {dummyInvoices.map((invoice, i) => (
+        {invoices.map((invoice, i) => (
           <div
             key={invoice.id}
             className={clsx(

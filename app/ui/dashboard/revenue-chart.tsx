@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend
 import { useState } from 'react';
 
 type Props = {
-  data: { name: string; count: number }[];
+  data: { name: string; total: number }[];
 };
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
@@ -57,7 +57,7 @@ export default function MostSoldChart({ data }: Props) {
           />
           <Legend wrapperStyle={{ paddingTop: '10px' }} />
           <Bar 
-            dataKey="count" 
+            dataKey="total" 
             name="Jumlah Terjual" 
             radius={[4, 4, 0, 0]}
             onMouseEnter={handleMouseEnter}

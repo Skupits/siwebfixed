@@ -37,6 +37,8 @@ export type LatestInvoice = {
   image_url: string;
   email: string;
   amount: string;
+  status?: 'pending' | 'paid';
+  date?: string;
 };
 
 // The database returns a number for amount, but we later format it to a string with the formatCurrency function
@@ -103,5 +105,3 @@ export type transaksi = {
   total_harga: string;
   status:'pending' | 'paid';
 }
-
-

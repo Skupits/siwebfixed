@@ -3,7 +3,8 @@ import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import { fetchCustomers, fetchProducts } from '@/app/lib/prisma';
 
 export default async function Page() {
-  const [customers, products] = await Promise.all([fetchCustomers(), fetchProducts()]);
+  const customers = await fetchCustomers();
+  const { products } = await fetchProducts();
 
   return (
     <main>

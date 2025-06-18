@@ -1,9 +1,15 @@
-// app/user/profile/page.tsx
+'use client';
+
 import { lusitana } from '@/app/ui/fonts';
-import { UserCircleIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, PhoneIcon, MapPinIcon, ShoppingBagIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function UserProfilePage() {
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   // Data user (dalam aplikasi nyata, ini akan diambil dari database)
   const user = {
     name: 'John Doe',
@@ -13,6 +19,20 @@ export default function UserProfilePage() {
     joinDate: '10 Maret 2023',
     orders: 12,
     avatar: '/Pulpen.png', // Gunakan gambar default
+  };
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    
+    // Clear auth data from localStorage
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+    localStorage.removeItem('authCode');
+    
+    // Redirect to login page
+    setTimeout(() => {
+      router.push('/Auth/Login');
+    }, 500);
   };
 
   return (
@@ -107,9 +127,17 @@ export default function UserProfilePage() {
             </div>
           </div>
           
-          <div className="mt-8 flex justify-center md:justify-start">
+          <div className="mt-8 flex justify-center md:justify-start gap-4">
             <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
               Edit Profil
+            </button>
+            <button 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+            >
+              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
             </button>
           </div>
         </div>
